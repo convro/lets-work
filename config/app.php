@@ -12,7 +12,6 @@ if (file_exists($envFile)) {
         if (strpos($line, '=') === false) continue;
         [$key, $value] = explode('=', $line, 2);
         $_ENV[trim($key)] = trim($value);
-        putenv(trim($key) . '=' . trim($value));
     }
 }
 
