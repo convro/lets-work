@@ -1,0 +1,227 @@
+/* ============================================
+   ConvroLabs - Neon Effects & Animations
+   ============================================ */
+
+/* ====== KEYFRAME ANIMATIONS ====== */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.2), 0 0 15px rgba(0, 240, 255, 0.1); }
+    50% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4), 0 0 30px rgba(0, 240, 255, 0.2), 0 0 45px rgba(0, 240, 255, 0.1); }
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+}
+
+@keyframes glitch-1 {
+    0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    20% { clip-path: inset(20% 0 60% 0); transform: translate(-3px, 2px); }
+    40% { clip-path: inset(60% 0 10% 0); transform: translate(3px, -1px); }
+    60% { clip-path: inset(40% 0 30% 0); transform: translate(-2px, 1px); }
+    80% { clip-path: inset(10% 0 70% 0); transform: translate(2px, -2px); }
+}
+
+@keyframes glitch-2 {
+    0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+    20% { clip-path: inset(80% 0 0 0); transform: translate(4px, -1px); }
+    40% { clip-path: inset(10% 0 50% 0); transform: translate(-4px, 2px); }
+    60% { clip-path: inset(30% 0 40% 0); transform: translate(2px, -3px); }
+    80% { clip-path: inset(50% 0 20% 0); transform: translate(-3px, 1px); }
+}
+
+@keyframes neon-flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+    20%, 24%, 55% { opacity: 0.6; }
+}
+
+@keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes border-dance {
+    0%, 100% { border-color: var(--neon-cyan); }
+    33% { border-color: var(--neon-purple); }
+    66% { border-color: var(--neon-pink); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ====== GLITCH TEXT ====== */
+.glitch-text {
+    position: relative;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.glitch-text:hover::before {
+    animation: glitch-1 0.3s linear;
+    color: var(--neon-cyan);
+    -webkit-text-fill-color: initial;
+}
+
+.glitch-text:hover::after {
+    animation: glitch-2 0.3s linear;
+    color: var(--neon-pink);
+    -webkit-text-fill-color: initial;
+}
+
+/* ====== NEON BORDER EFFECT ====== */
+.neon-border {
+    position: relative;
+}
+
+.neon-border::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    filter: blur(4px);
+}
+
+.neon-border:focus-within::after {
+    opacity: 0.6;
+}
+
+/* ====== SCANLINE OVERLAY ====== */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.015) 2px,
+        rgba(0, 0, 0, 0.015) 4px
+    );
+}
+
+/* ====== GLOW CARDS ====== */
+.card-glow {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-glow::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, var(--neon-cyan), transparent, var(--neon-purple), transparent);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    animation: spin 4s linear infinite;
+}
+
+.card-glow:hover::before {
+    opacity: 0.05;
+}
+
+/* ====== SHIMMER LOADING ====== */
+.shimmer {
+    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* ====== NEON DIVIDER ====== */
+.neon-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), var(--neon-purple), transparent);
+    border: none;
+    margin: 1.5rem 0;
+    opacity: 0.3;
+}
+
+/* ====== GLOW TEXT CLASSES ====== */
+.text-cyan { color: var(--neon-cyan); }
+.text-pink { color: var(--neon-pink); }
+.text-purple { color: var(--neon-purple); }
+.text-green { color: var(--neon-green); }
+.text-orange { color: var(--neon-orange); }
+
+.text-glow-cyan { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+.text-glow-pink { color: var(--neon-pink); text-shadow: 0 0 10px rgba(255, 0, 229, 0.5); }
+.text-glow-purple { color: var(--neon-purple); text-shadow: 0 0 10px rgba(176, 0, 255, 0.5); }
+.text-glow-green { color: var(--neon-green); text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+
+/* ====== ANIMATED GRADIENT BORDER ====== */
+.gradient-border {
+    border: 2px solid transparent;
+    background-image: linear-gradient(var(--bg-card), var(--bg-card)),
+                      linear-gradient(135deg, var(--neon-cyan), var(--neon-purple), var(--neon-pink));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+/* ====== FLOATING PARTICLES STYLE ====== */
+.particle {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    pointer-events: none;
+}

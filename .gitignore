@@ -1,0 +1,6 @@
+.env
+data/app.db
+public/uploads/*
+!public/uploads/.gitkeep
+certbot/
+*.log
