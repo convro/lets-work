@@ -4,7 +4,12 @@ set -euo pipefail
 # ============================================================
 #  ConvroLabs Link Manager - Deployment Script
 #  Run as root on your VPS: bash deploy.sh
+#
+#  Uses Docker internally on port 7463 (never 8080/80/443)
+#  Creates an nginx vhost on the HOST for reverse proxy + SSL
 # ============================================================
+
+INTERNAL_PORT=7463
 
 BOLD='\033[1m'
 CYAN='\033[0;36m'
@@ -55,13 +60,21 @@ else
     exit 1
 fi
 
+# ---- Check host nginx ----
+if ! command -v nginx &> /dev/null; then
+    echo -e "${RED}[!] Nginx is not installed on the host.${NC}"
+    echo -e "${YELLOW}    We need the HOST nginx for reverse proxy + SSL.${NC}"
+    echo -e "${YELLOW}    Install it with: apt install nginx${NC}"
+    exit 1
+fi
+
 echo ""
 
 # ---- Get domain ----
 echo -e "${CYAN}${BOLD}[1/3] Domain Configuration${NC}"
 echo -e "${YELLOW}  Make sure you've pointed your domain's A record to this server's IP.${NC}"
 echo ""
-read -rp "  Enter the domain for this installation (e.g., cdn4.convro.eu): " DOMAIN
+read -rp "  Enter the domain for this installation (e.g., convrolabs.link): " DOMAIN
 
 if [[ -z "$DOMAIN" ]]; then
     echo -e "${RED}[!] Domain cannot be empty.${NC}"
@@ -112,12 +125,12 @@ EOF
 
 echo -e "  ${GREEN}[+] .env file created${NC}"
 
-# ---- Update nginx config with actual domain ----
-sed -i "s/\${APP_DOMAIN}/${DOMAIN}/g" nginx/default.conf
+# ---- Update docker nginx config with actual domain ----
+sed -i "s/\${APP_DOMAIN}/${DOMAIN}/g" nginx/default.conf 2>/dev/null || true
 
-# ---- Build and deploy ----
+# ---- Build and deploy containers ----
 echo ""
-echo -e "${PURPLE}${BOLD}  Building and deploying containers...${NC}"
+echo -e "${PURPLE}${BOLD}  Building and deploying containers on port ${INTERNAL_PORT}...${NC}"
 echo ""
 
 $COMPOSE down 2>/dev/null || true
@@ -125,38 +138,77 @@ $COMPOSE build --no-cache
 $COMPOSE up -d
 
 echo ""
-echo -e "${GREEN}[+] Containers are running!${NC}"
+echo -e "${GREEN}[+] Containers are running on localhost:${INTERNAL_PORT}${NC}"
 
-# ---- SSL Certificate ----
+# ---- Create HOST nginx vhost (reverse proxy) ----
+echo ""
+echo -e "${CYAN}${BOLD}  Creating nginx vhost for ${DOMAIN}...${NC}"
+
+NGINX_CONF="/etc/nginx/sites-available/${DOMAIN}"
+NGINX_ENABLED="/etc/nginx/sites-enabled/${DOMAIN}"
+
+cat > "$NGINX_CONF" <<NGINXEOF
+server {
+    listen 80;
+    listen [::]:80;
+    server_name ${DOMAIN};
+
+    client_max_body_size 100M;
+
+    location / {
+        proxy_pass http://127.0.0.1:${INTERNAL_PORT};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_buffering off;
+        proxy_request_buffering off;
+    }
+}
+NGINXEOF
+
+# Enable site
+if [ ! -d "/etc/nginx/sites-enabled" ]; then
+    mkdir -p /etc/nginx/sites-enabled
+fi
+ln -sf "$NGINX_CONF" "$NGINX_ENABLED"
+
+# Test and reload nginx
+nginx -t && systemctl reload nginx
+echo -e "  ${GREEN}[+] Nginx vhost created and active${NC}"
+
+# ---- SSL Certificate with certbot ----
 echo ""
 echo -e "${CYAN}${BOLD}  Setting up SSL certificate with Let's Encrypt...${NC}"
 echo ""
 
-# Wait for nginx to be ready
-sleep 3
+# Install certbot if needed
+if ! command -v certbot &> /dev/null; then
+    echo -e "${YELLOW}  Installing certbot...${NC}"
+    apt-get update -qq && apt-get install -y -qq certbot python3-certbot-nginx 2>/dev/null || {
+        snap install --classic certbot 2>/dev/null || true
+        ln -sf /snap/bin/certbot /usr/bin/certbot 2>/dev/null || true
+    }
+fi
 
-# Get SSL cert
-docker exec convrolabs-web sh -c "apk add --no-cache certbot certbot-nginx 2>/dev/null" || true
-$COMPOSE exec -T web certbot --nginx -d "$DOMAIN" \
+# Get SSL cert using HOST nginx (not docker)
+certbot --nginx -d "$DOMAIN" \
     --non-interactive \
     --agree-tos \
     --email "admin@${DOMAIN}" \
     --redirect 2>/dev/null || {
-    echo -e "${YELLOW}[!] SSL setup via certbot-nginx failed. Trying standalone...${NC}"
-    $COMPOSE stop web
-    docker run --rm -p 80:80 -p 443:443 \
-        -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
-        -v "$(pwd)/certbot/www:/var/www/certbot" \
-        certbot/certbot certonly --standalone \
-        -d "$DOMAIN" \
+    echo -e "${YELLOW}[!] Certbot auto-config failed. Trying certonly...${NC}"
+    certbot certonly --webroot -w /var/www/html -d "$DOMAIN" \
         --non-interactive \
         --agree-tos \
-        --email "admin@${DOMAIN}" 2>/dev/null || echo -e "${YELLOW}[!] SSL setup failed - you may need to set up DNS first. App will work on HTTP.${NC}"
-    $COMPOSE start web
+        --email "admin@${DOMAIN}" 2>/dev/null || {
+        echo -e "${YELLOW}[!] SSL setup failed - DNS may not have propagated yet.${NC}"
+        echo -e "${YELLOW}    Run this later: certbot --nginx -d ${DOMAIN}${NC}"
+    }
 }
 
 # ---- Setup SSL auto-renewal cron ----
-(crontab -l 2>/dev/null | grep -v "convrolabs-certbot"; echo "0 3 * * * cd $(pwd) && $COMPOSE exec -T certbot certbot renew --quiet") | crontab -
+(crontab -l 2>/dev/null | grep -v "certbot renew"; echo "0 3 * * * certbot renew --quiet --post-hook 'systemctl reload nginx'") | crontab -
 
 echo ""
 echo -e "${GREEN}${BOLD}  ╔══════════════════════════════════════════════════╗${NC}"
@@ -165,10 +217,10 @@ echo -e "${GREEN}${BOLD}  ╚═════════════════
 echo ""
 echo -e "  ${CYAN}URL:${NC}      https://${DOMAIN}"
 echo -e "  ${CYAN}Password:${NC} (the one you just set)"
+echo -e "  ${CYAN}Internal:${NC} localhost:${INTERNAL_PORT}"
 echo ""
-echo -e "  ${YELLOW}Important:${NC}"
-echo -e "  - Make sure your domain's ${BOLD}A record${NC} points to this server's IP"
-echo -e "  - If SSL failed, re-run: ${BOLD}$COMPOSE exec certbot certbot certonly --webroot -w /var/www/certbot -d ${DOMAIN}${NC}"
-echo -e "  - Logs: ${BOLD}$COMPOSE logs -f${NC}"
-echo -e "  - Stop: ${BOLD}$COMPOSE down${NC}"
+echo -e "  ${YELLOW}Commands:${NC}"
+echo -e "  - Logs: ${BOLD}cd $(pwd) && $COMPOSE logs -f${NC}"
+echo -e "  - Stop: ${BOLD}cd $(pwd) && $COMPOSE down${NC}"
+echo -e "  - SSL:  ${BOLD}certbot --nginx -d ${DOMAIN}${NC}"
 echo ""
