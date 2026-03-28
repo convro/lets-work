@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fun Club Claude AI</title>
+    <link rel="stylesheet" href="use.css">
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <div class="container">
+        <header class="hero">
+            <div class="logo-orb" id="logo-orb">
+                <span class="orb-inner">C</span>
+            </div>
+            <h1 class="title" id="main-title">Fun Club Claude AI</h1>
+            <p class="subtitle" id="subtitle"></p>
+        </header>
+
+        <section class="cards-section">
+            <div class="card" data-tilt>
+                <div class="card-icon">&#9889;</div>
+                <h3>Neural Chat</h3>
+                <p>Real-time AI conversations with dynamic response animations</p>
+                <div class="card-bar"></div>
+            </div>
+            <div class="card" data-tilt>
+                <div class="card-icon">&#127912;</div>
+                <h3>Creative Lab</h3>
+                <p>Generate art, music, and stories with advanced AI models</p>
+                <div class="card-bar"></div>
+            </div>
+            <div class="card" data-tilt>
+                <div class="card-icon">&#128640;</div>
+                <h3>Code Arena</h3>
+                <p>Collaborative coding challenges powered by Claude</p>
+                <div class="card-bar"></div>
+            </div>
+        </section>
+
+        <section class="interactive-section">
+            <h2 class="section-title">Live Playground</h2>
+            <div class="playground">
+                <div class="wave-visualizer" id="wave-vis">
+                    <canvas id="wave-canvas" width="800" height="200"></canvas>
+                </div>
+                <div class="controls">
+                    <button class="btn-neon" id="btn-wave" data-mode="sine">Sine Wave</button>
+                    <button class="btn-neon" id="btn-square" data-mode="square">Square</button>
+                    <button class="btn-neon" id="btn-noise" data-mode="noise">Noise</button>
+                    <button class="btn-neon" id="btn-spiral" data-mode="spiral">Spiral</button>
+                    <input type="range" id="frequency" min="1" max="50" value="10" class="slider-neon">
+                    <span id="freq-label" class="freq-label">10 Hz</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="counter-section">
+            <h2 class="section-title">Community Stats</h2>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-number" data-target="48291" id="stat-members">0</div>
+                    <div class="stat-label">Members</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" data-target="1893472" id="stat-messages">0</div>
+                    <div class="stat-label">Messages</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" data-target="7841" id="stat-projects">0</div>
+                    <div class="stat-label">Projects</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number" data-target="342" id="stat-online">0</div>
+                    <div class="stat-label">Online Now</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="chat-section">
+            <h2 class="section-title">Try Claude</h2>
+            <div class="chat-box" id="chat-box">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="msg msg-ai">
+                        <span class="msg-avatar">C</span>
+                        <div class="msg-bubble">Hey! I'm Claude. Ask me anything or try these: "tell me a joke", "write a haiku", "fun fact"</div>
+                    </div>
+                </div>
+                <div class="chat-input-row">
+                    <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
+                    <button class="btn-send" id="btn-send">&#10148;</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="matrix-section">
+            <h2 class="section-title">Data Stream</h2>
+            <div class="matrix-rain" id="matrix-rain"></div>
+        </section>
+
+        <footer class="footer">
+            <p>Fun Club Claude AI &copy; 2026 &mdash; Built with vibes</p>
+            <div class="footer-dots">
+                <span class="dot dot-cyan"></span>
+                <span class="dot dot-pink"></span>
+                <span class="dot dot-purple"></span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="use.js"></script>
+</body>
+</html>
